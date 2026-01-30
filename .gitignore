@@ -1,0 +1,23 @@
+# ide files
+.vscode
+.vs
+.xmake
+.idea
+/.idea
+
+# build files
+[Bb]in
+[Oo]bj
+/bin
+/build
+/out
+__pycache__
+/.cache
+
+# git repos
+/deps
+
+# misc
+*.user
+.DS_Store
+compile_commands.json
