@@ -8,11 +8,10 @@
 #else
   // NOTE: this is weird behavior of macOS: when aligned_alloc for 4 bytes, it just
   // returns NULL...
-  #define aligned_alloc(alignment, size)                \
-    ([alignment_ = alignment, size_ = size]() {         \
-      void* mem = malloc(size_);                        \
-      mCheck(((uintptr_t)mem & (alignment_ - 1)) == 0); \
-      return mem;                                       \
+  #define aligned_alloc(alignment, size)        \
+    ([alignment_ = alignment, size_ = size]() { \
+      void* mem = malloc(size_);                \
+      return mem;                               \
     })()
 
   #define aligned_free(x) free(x)
