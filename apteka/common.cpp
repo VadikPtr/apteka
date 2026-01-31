@@ -36,9 +36,13 @@ void uv_alloc_buffer(uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) 
 }
 
 void uv_free_buffer_data(void* data) {
-  aligned_free(data);
+  if (data) {
+    aligned_free(data);
+  }
 }
 
 void uv_free_buffer(const uv_buf_t* buf) {
-  uv_free_buffer_data(buf->base);
+  if (buf) {
+    uv_free_buffer_data(buf->base);
+  }
 }

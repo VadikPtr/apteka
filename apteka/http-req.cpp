@@ -1,64 +1,45 @@
 #include "http-req.hpp"
+#include "http-connection.hpp"
+#include "cc/fmt.hpp"
 #include "cc/log.hpp"
 
-HttpReq HttpReqBuilder::build() {
-  HttpReq req;
-  req.url     = url_.to_string();
-  req.headers = move(headers_);
-  req.method  = method_;
-  return req;
+HttpRes::HttpRes(HttpConnection* http_connection) : http_connection_(http_connection) {}
+
+HttpRes& HttpRes::status(llhttp_status value) {
+  status_ = value;
+  return *this;
 }
 
-void HttpReqBuilder::set_method(llhttp_method method) {
-  method_ = method;
+HttpRes& HttpRes::content_type(StrView value) {
+  content_type_ = value;
+  return *this;
 }
 
-bool HttpReqBuilder::append_url(StrView val) {
-  if (url_.view().size() + val.size() > g_max_url_size) {
-    return false;
-  }
-  url_.append(val);
-  return true;
+HttpRes& HttpRes::body(Str data) {
+  body_is_text_ = true;
+  body_text_    = move(data);
+  return *this;
 }
 
-bool HttpReqBuilder::append_header_field(StrView val) {
-  if (header_field_.view().size() + val.size() > g_max_header_field_size) {
-    return false;
-  }
-  header_field_.append(val);
-  return true;
+HttpRes& HttpRes::body(Arr<u8> data) {
+  body_is_text_ = false;
+  body_binary_  = move(data);
+  return *this;
 }
 
-bool HttpReqBuilder::append_header_value(StrView val) {
-  if (header_value_.view().size() + val.size() > g_max_header_value_size) {
-    return false;
-  }
-  header_value_.append(val);
-  return true;
-}
+void HttpRes::send() {
+  StrView send_body =
+      body_is_text_ ? body_text_ : StrView((char*)body_binary_.data(), body_binary_.size());
 
-void HttpReqBuilder::header_done() {
-  StrView key = header_field_.view().to_lower();
-  StrView val = header_value_.view();
-  mLogDebug("Header [", key, "]: ", val);
-  headers_.insert(StrHash(key), Str(val));
-  header_field_.reset();
-  header_value_.reset();
-}
+  // clang-format off
+  fmt(buffer_,
+    "HTTP/1.1 ", StrView(llhttp_status_name(status_)), "\r\n"
+    "Content-Type: ", content_type_, "\r\n"
+    "Content-Length: ", send_body.size(), "\r\n"
+    "Connection: close\r\n"
+    "\r\n",
+    send_body);
+  // clang-format on
 
-bool HttpReqBuilder::parse_method(StrView method_name) {
-  mLogDebug("Method: ", method_name);
-
-#define mExpandMethodCheck(code, name, ...) \
-  if (method_name == #name) {               \
-    method_ = HTTP_##name;                  \
-    return true;                            \
-  }
-
-  HTTP_METHOD_MAP(mExpandMethodCheck);
-
-#undef mExpandMethodCheck
-
-  mLogDebug("Unknown method: ", method_name);
-  return false;
+  http_connection_->send(buffer_.view());
 }
