@@ -19,18 +19,39 @@ void HttpServer::listen(const SockAddr& addr) {
   mUvCheckCrit(uv_listen(get_stream(), backlog, connection_cb));
 }
 
+void HttpServer::report_closed(class HttpConnection* con) {
+  bool removed = false;
+  for (auto it = connections_.begin(); it != connections_.end();) {
+    if (*it == con) {
+      connections_.remove(it);
+      removed = true;
+      break;
+    }
+  }
+
+  if (not removed) {
+    mLogWarn("No connection found. Cant report as closed!");
+  }
+  mLogInfo("Connection destroyed! Currently active: ", connections_.size());
+}
+
 uv_stream_t* HttpServer::get_stream() {
   return (uv_stream_t*)&socket_;
 }
 
-void HttpServer::connection_cb(uv_stream_t* server, int status) {
+void HttpServer::connection_cb(uv_stream_t* socket, int status) {
+  HttpServer* self = (HttpServer*)socket->data;
+
   if (status == -1) {
     mLogWarn("Connection callback got error");
     return;
   }
 
-  HttpConnection* con = new HttpConnection();
-  if (not con->init(server)) {
+  HttpConnection* con = new HttpConnection(self);
+  mLogInfo("New connection! Currently active: ", self->connections_.size());
+  self->connections_.push_back(con);
+
+  if (not con->init(socket)) {
     delete con;
     return;
   }

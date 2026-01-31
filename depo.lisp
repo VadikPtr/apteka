@@ -1,11 +1,11 @@
 (deps
-  (archive cc https://github.com/VadikPtr/cc/archive/refs/tags/v1.0.0.tar.gz)
+  (git cc https://github.com/VadikPtr/cc.git)
   (archive libuv https://bin.vy.ru.net/libuv-{os}.tar.xz)
   (archive llhttp https://bin.vy.ru.net/llhttp-{os}.tar.xz)
 )
 
 (require
-  deps/cc/cc-1.0.0
+  deps/cc
   deps/libuv
   deps/llhttp
 )

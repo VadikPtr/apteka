@@ -2,29 +2,30 @@
 #include "cc/log.hpp"
 #include "common.hpp"
 #include "http-req.hpp"
+#include "http-server.hpp"
 #include "llhttp.h"
 #include "mime.hpp"
 #include "uv.h"
 
-HttpConnection::HttpConnection() : response_(this) {
-  mLogInfo("Connection created!");
+HttpConnection::HttpConnection(HttpServer* server) : response_(this), server_(server) {
+  // mLogInfo("Connection created!");
   memset(&stream_, 0, sizeof(stream_));
   memset(&write_req_, 0, sizeof(write_req_));
   memset(&response_buf_, 0, sizeof(response_buf_));
 }
 
 HttpConnection::~HttpConnection() {
-  mLogInfo("Connection destroyed!");
+  server_->report_closed(this);
   reset();
 }
 
-bool HttpConnection::init(uv_stream_t* server) {
+bool HttpConnection::init(uv_stream_t* socket) {
   mLogDebug("Client connected");
   if (not mUvCheckError(uv_tcp_init(uv_default_loop(), &stream_))) {
     return false;
   }
-  closed_ = false;
-  if (not mUvCheckError(uv_accept(server, get_stream()))) {
+  stream_open_ = true;
+  if (not mUvCheckError(uv_accept(socket, get_stream()))) {
     return false;
   }
   if (not mUvCheckError(uv_tcp_nodelay(&stream_, 1))) {
@@ -46,7 +47,9 @@ uv_handle_t* HttpConnection::get_handle() {
 }
 
 void HttpConnection::close() {
-  uv_close(get_handle(), HttpConnection::close_cb);
+  if (stream_open_) {
+    uv_close(get_handle(), close_cb);
+  }
 }
 
 void HttpConnection::start() {
@@ -66,9 +69,6 @@ void HttpConnection::send(StrView data) {
 
 void HttpConnection::reset() {
   mLogDebug("Reset http connection");
-  if (not closed_) {
-    uv_close(get_handle(), NULL);
-  }
   uv_free_buffer(&response_buf_);
   memset(&write_req_, 0, sizeof(write_req_));
   memset(&response_buf_, 0, sizeof(response_buf_));
@@ -78,7 +78,7 @@ void HttpConnection::reset() {
 
 void HttpConnection::close_cb(uv_handle_t* handle) {
   HttpConnection* self = (HttpConnection*)handle->data;
-  self->closed_        = true;
+  self->stream_open_   = false;
   delete self;
 }
 

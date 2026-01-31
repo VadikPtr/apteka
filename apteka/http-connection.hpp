@@ -3,16 +3,19 @@
 #include "req-parser.hpp"
 #include "http-req.hpp"
 
+class HttpServer;
+
 class HttpConnection {
-  uv_tcp_t   stream_;
-  uv_write_t write_req_;
-  uv_buf_t   response_buf_;
-  ReqParser  req_parser_;
-  HttpRes    response_;
-  bool       closed_ = true;
+  uv_tcp_t    stream_;
+  HttpServer* server_;
+  uv_write_t  write_req_;
+  uv_buf_t    response_buf_;
+  ReqParser   req_parser_;
+  HttpRes     response_;
+  bool        stream_open_ = false;
 
  public:
-  HttpConnection();
+  HttpConnection(HttpServer* socket);
   ~HttpConnection();
 
   bool         init(uv_stream_t* server);
