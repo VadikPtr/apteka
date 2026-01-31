@@ -4,6 +4,8 @@
 #include "cc/log.hpp"
 #include "uv.h"
 
+static constexpr int backlog = 1024 * 16;
+
 HttpServer::HttpServer() {
   memset(&socket_, 0, sizeof(socket_));
   socket_.data = this;
@@ -12,7 +14,9 @@ HttpServer::HttpServer() {
 
 void HttpServer::listen(const SockAddr& addr) {
   mUvCheckCrit(uv_tcp_bind(&socket_, &addr.addr, 0));
-  mUvCheckCrit(uv_listen(get_stream(), 1024, connection_cb));
+  // mUvCheckCrit(uv_tcp_keepalive(&socket_, 1, 45));
+  // mUvCheckCrit(uv_tcp_simultaneous_accepts(&socket_, 1));
+  mUvCheckCrit(uv_listen(get_stream(), backlog, connection_cb));
 }
 
 uv_stream_t* HttpServer::get_stream() {
@@ -26,13 +30,8 @@ void HttpServer::connection_cb(uv_stream_t* server, int status) {
   }
 
   HttpConnection* con = new HttpConnection();
-  if (not con->init()) {
+  if (not con->init(server)) {
     delete con;
-    return;
-  }
-
-  if (not mUvCheckError(uv_accept(server, con->get_stream()))) {
-    con->close();
     return;
   }
 

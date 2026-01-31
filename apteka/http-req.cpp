@@ -3,6 +3,11 @@
 #include "cc/fmt.hpp"
 #include "cc/log.hpp"
 
+void HttpReq::reset() {
+  url     = Str();
+  headers = Dict<StrHash, Str>();
+}
+
 HttpRes::HttpRes(HttpConnection* http_connection) : http_connection_(http_connection) {}
 
 HttpRes& HttpRes::status(llhttp_status value) {
@@ -33,13 +38,21 @@ void HttpRes::send() {
 
   // clang-format off
   fmt(buffer_,
-    "HTTP/1.1 ", StrView(llhttp_status_name(status_)), "\r\n"
+    "HTTP/1.1 ", int(status_), " ", StrView(llhttp_status_name(status_)), "\r\n"
     "Content-Type: ", content_type_, "\r\n"
     "Content-Length: ", send_body.size(), "\r\n"
-    "Connection: close\r\n"
+    "Connection: Keep-Alive\r\n"
+    // "Keep-Alive: timeout=5, max=30\r\n" // in seconds
     "\r\n",
     send_body);
   // clang-format on
 
+  mLogDebug("Write: ", buffer_.view().size());
   http_connection_->send(buffer_.view());
+}
+
+void HttpRes::reset() {
+  buffer_.reset();
+  body_text_   = Str();
+  body_binary_ = ArrView<u8>();
 }

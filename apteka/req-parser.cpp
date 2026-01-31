@@ -55,6 +55,13 @@ ReqParser::ReqParser() {
   parser.data = this;
 }
 
+void HttpReqBuilder::reset() {
+  url_.reset();
+  header_field_.reset();
+  header_value_.reset();
+  headers_ = Dict<StrHash, Str>();
+}
+
 HttpReq HttpReqBuilder::build() {
   HttpReq req;
   req.url     = url_.to_string();
@@ -94,7 +101,7 @@ bool HttpReqBuilder::append_header_value(StrView val) {
 void HttpReqBuilder::header_done() {
   StrView key = header_field_.view().to_lower();
   StrView val = header_value_.view();
-  mLogDebug("Header [", key, "]: ", val);
+  // mLogDebug("Header [", key, "]: ", val);
   headers_.insert(StrHash(key), Str(val));
   header_field_.reset();
   header_value_.reset();
@@ -124,6 +131,11 @@ bool ReqParser::handle(StrView data) {
              StrView(parser.reason));
     return false;
   }
-
   return true;
+}
+
+void ReqParser::reset() {
+  llhttp_reset(&parser);
+  req_builder_.reset();
+  done_ = false;
 }

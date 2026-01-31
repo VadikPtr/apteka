@@ -15,6 +15,7 @@ class HttpReqBuilder {
   static constexpr const size_t g_max_header_value_size = 2048;
 
  public:
+  void    reset();
   HttpReq build();
   void    set_method(llhttp_method method);
   bool    append_url(StrView val);
@@ -33,6 +34,7 @@ class ReqParser {
   ReqParser();
 
   bool handle(StrView data);
+  void reset();
 
   HttpReqBuilder& get_builder() { return req_builder_; }
   bool            is_parsing_done() { return done_; }

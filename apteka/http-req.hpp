@@ -10,6 +10,8 @@ struct HttpReq {
   Str                url;
   Dict<StrHash, Str> headers;
   llhttp_method      method;
+
+  void reset();
 };
 
 class HttpRes {
@@ -30,4 +32,5 @@ class HttpRes {
   HttpRes& body(Arr<u8> data);
 
   void send();
+  void reset();
 };
