@@ -31,6 +31,7 @@ class HttpRes {
   HttpRes& body(Str data);
   HttpRes& body(Arr<u8> data);
 
+  void send_basic(llhttp_status status);
   void send();
   void reset();
 };

@@ -32,8 +32,6 @@ namespace {
     settings.on_message_complete = [](llhttp_t* http) -> int {
       ReqParser* self = (ReqParser*)http->data;
       self->get_builder().set_method((llhttp_method_t)http->method);
-      HttpReq req = self->get_builder().build();
-      mLogDebug("HTTP ", StrView(llhttp_method_name(req.method)), " ", req.url);
       self->set_parsing_done();
       return 0;
     };

@@ -6,7 +6,7 @@
 
 static constexpr int g_backlog = 1024 * 16;
 
-HttpServer::HttpServer() {
+HttpServer::HttpServer(Router& router) : router_(router) {
   memset(&socket_, 0, sizeof(socket_));
   socket_.data = this;
   mUvCheckCrit(uv_tcp_init(uv_default_loop(), &socket_));
@@ -36,7 +36,7 @@ void HttpServer::connection_cb(uv_stream_t* socket, int status) {
     return;
   }
 
-  HttpConnection* con = new HttpConnection(self);
+  HttpConnection* con = new HttpConnection(*self, self->router_);
   ++self->connections_num_;
   mLogDebug("New connection! Currently active: ", self->connections_num_);
 

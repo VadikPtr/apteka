@@ -3,11 +3,11 @@
 #include "common.hpp"
 #include "http-req.hpp"
 #include "http-server.hpp"
-#include "llhttp.h"
-#include "mime.hpp"
+#include "router.hpp"
 #include "uv.h"
 
-HttpConnection::HttpConnection(HttpServer* server) : response_(this), server_(server) {
+HttpConnection::HttpConnection(HttpServer& server, Router& router)
+    : response_(this), server_(server), router_(router) {
   // mLogInfo("Connection created!");
   memset(&stream_, 0, sizeof(stream_));
   memset(&write_req_, 0, sizeof(write_req_));
@@ -15,7 +15,7 @@ HttpConnection::HttpConnection(HttpServer* server) : response_(this), server_(se
 }
 
 HttpConnection::~HttpConnection() {
-  server_->report_closed(this);
+  server_.report_closed(this);
   reset();
 }
 
@@ -96,10 +96,18 @@ void HttpConnection::read_cb(uv_stream_t* stream, ssize_t nread, const uv_buf_t*
       self->close();
     } else if (self->req_parser_.is_parsing_done()) {
       mLogDebug("Parsing done");
-      self->response_.status(HTTP_STATUS_OK)
-          .content_type(ContentType::text_plain())
-          .body(Str("Hello!"))
-          .send();
+
+      HttpReq req = self->req_parser_.get_builder().build();
+      mLogDebug("HTTP ", StrView(llhttp_method_name(req.method)), " ", req.url);
+
+      self->router_.handle(req, self->response_);
+
+      // self->response_.send_basic(HTTP_STATUS_OK);
+
+      // self->response_.status(HTTP_STATUS_OK)
+      //     .content_type(ContentType::text_plain())
+      //     .body(Str("Hello!"))
+      //     .send();
     }
   }
 

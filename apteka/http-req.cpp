@@ -1,7 +1,8 @@
 #include "http-req.hpp"
+#include "cc/str.hpp"
 #include "http-connection.hpp"
 #include "cc/fmt.hpp"
-#include "cc/log.hpp"
+#include "mime.hpp"
 
 void HttpReq::reset() {
   url     = Str();
@@ -47,7 +48,23 @@ void HttpRes::send() {
     send_body);
   // clang-format on
 
-  mLogDebug("Write: ", buffer_.view().size());
+  http_connection_->send(buffer_.view());
+}
+
+void HttpRes::send_basic(llhttp_status status) {
+  StrBuilder send_body;
+  fmt(send_body, int(status), " ", StrView(llhttp_status_name(status)));
+
+  // clang-format off
+  fmt(buffer_,
+    "HTTP/1.1 ", send_body.view(), "\r\n"
+    "Content-Type: ", ContentType::text_plain(), "\r\n"
+    "Content-Length: ", send_body.view().size(), "\r\n"
+    "Connection: Keep-Alive\r\n"
+    "\r\n",
+    send_body.view());
+  // clang-format on
+
   http_connection_->send(buffer_.view());
 }
 

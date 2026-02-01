@@ -4,10 +4,12 @@
 #include "http-req.hpp"
 
 class HttpServer;
+class Router;
 
 class HttpConnection {
   uv_tcp_t    stream_;
-  HttpServer* server_;
+  HttpServer& server_;
+  Router&     router_;
   uv_write_t  write_req_;
   uv_buf_t    response_buf_;
   ReqParser   req_parser_;
@@ -15,7 +17,7 @@ class HttpConnection {
   bool        stream_open_ = false;
 
  public:
-  HttpConnection(HttpServer* socket);
+  HttpConnection(HttpServer& server, Router& router);
   ~HttpConnection();
 
   bool         init(uv_stream_t* server);

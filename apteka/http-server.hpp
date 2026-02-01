@@ -2,12 +2,15 @@
 #include "ip.hpp"
 #include "uv.h"
 
+class Router;
+
 class HttpServer {
   uv_tcp_t socket_;
   size_t   connections_num_ = 0;
+  Router&  router_;
 
  public:
-  HttpServer();
+  HttpServer(Router& router);
 
   void listen(const SockAddr& addr);
   void report_closed(class HttpConnection* con);
