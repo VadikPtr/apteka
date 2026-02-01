@@ -23,6 +23,7 @@ namespace {
 int main() {
   Router router;
   router.add(HTTP_GET, "/", new ExampleHandler());
+  router.serve_static("/static", Path::to_cwd() / "static");
 
   HttpServer server(router);
   server.listen(SockAddr(mBindAddr, 8080));

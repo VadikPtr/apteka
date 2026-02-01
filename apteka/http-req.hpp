@@ -16,7 +16,7 @@ struct HttpReq {
 
 class HttpRes {
   StrBuilder      buffer_;
-  HttpConnection* http_connection_;
+  HttpConnection& http_connection_;
   StrView         content_type_;
   Str             body_text_;
   Arr<u8>         body_binary_;
@@ -24,7 +24,7 @@ class HttpRes {
   bool            body_is_text_;
 
  public:
-  HttpRes(HttpConnection* http_connection);
+  HttpRes(HttpConnection& http_connection);
 
   HttpRes& status(llhttp_status value);
   HttpRes& content_type(StrView value);

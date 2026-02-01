@@ -7,7 +7,7 @@
 #include "uv.h"
 
 HttpConnection::HttpConnection(HttpServer& server, Router& router)
-    : response_(this), server_(server), router_(router) {
+    : response_(*this), server_(server), router_(router) {
   // mLogInfo("Connection created!");
   memset(&stream_, 0, sizeof(stream_));
   memset(&write_req_, 0, sizeof(write_req_));

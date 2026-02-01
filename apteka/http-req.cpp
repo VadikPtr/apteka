@@ -9,7 +9,7 @@ void HttpReq::reset() {
   headers = Dict<StrHash, Str>();
 }
 
-HttpRes::HttpRes(HttpConnection* http_connection) : http_connection_(http_connection) {}
+HttpRes::HttpRes(HttpConnection& http_connection) : http_connection_(http_connection) {}
 
 HttpRes& HttpRes::status(llhttp_status value) {
   status_ = value;
@@ -48,7 +48,7 @@ void HttpRes::send() {
     send_body);
   // clang-format on
 
-  http_connection_->send(buffer_.view());
+  http_connection_.send(buffer_.view());
 }
 
 void HttpRes::send_basic(llhttp_status status) {
@@ -65,7 +65,7 @@ void HttpRes::send_basic(llhttp_status status) {
     send_body.view());
   // clang-format on
 
-  http_connection_->send(buffer_.view());
+  http_connection_.send(buffer_.view());
 }
 
 void HttpRes::reset() {

@@ -1,5 +1,6 @@
 #pragma once
 #include "cc/dict.hpp"
+#include "cc/fs.hpp"
 #include "http-req.hpp"
 #include "llhttp.h"
 
@@ -25,5 +26,7 @@ class Router {
 
   void use_not_found_handler(IReqHandler* not_found_handler);
   void add(llhttp_method method, StrView path, IReqHandler* handler);
+  void serve_static(StrView     mount_path,
+                    const Path& dir);  // NOTE: this is dev handler, not for production
   void handle(const HttpReq& req, HttpRes& res);
 };
