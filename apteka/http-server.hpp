@@ -1,11 +1,10 @@
 #pragma once
-#include "cc/list.hpp"
 #include "ip.hpp"
 #include "uv.h"
 
 class HttpServer {
-  uv_tcp_t                    socket_;
-  List<class HttpConnection*> connections_;
+  uv_tcp_t socket_;
+  size_t   connections_num_ = 0;
 
  public:
   HttpServer();
