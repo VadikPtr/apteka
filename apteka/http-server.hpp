@@ -1,6 +1,6 @@
 #pragma once
 #include "ip.hpp"
-#include "uv.h"
+#include <uv.h>
 
 class Router;
 
@@ -13,7 +13,6 @@ class HttpServer {
   HttpServer(Router& router);
 
   void listen(const SockAddr& addr);
-  void report_closed(class HttpConnection* con);
 
  private:
   uv_stream_t* get_stream();

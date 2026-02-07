@@ -1,21 +1,20 @@
 #include "http-connection.hpp"
-#include "cc/log.hpp"
 #include "common.hpp"
 #include "http-req.hpp"
 #include "http-server.hpp"
 #include "router.hpp"
-#include "uv.h"
+#include <cc/log.hpp>
+#include <uv.h>
 
-HttpConnection::HttpConnection(HttpServer& server, Router& router)
-    : response_(*this), server_(server), router_(router) {
-  // mLogInfo("Connection created!");
+HttpConnection::HttpConnection(Router& router)
+    : response_(*this), router_(router) {
+  mLogDebug("Connection created!");
   memset(&stream_, 0, sizeof(stream_));
   memset(&write_req_, 0, sizeof(write_req_));
   memset(&response_buf_, 0, sizeof(response_buf_));
 }
 
 HttpConnection::~HttpConnection() {
-  server_.report_closed(this);
   reset();
 }
 
@@ -85,33 +84,33 @@ void HttpConnection::close_cb(uv_handle_t* handle) {
 void HttpConnection::read_cb(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
   HttpConnection* self = (HttpConnection*)stream->data;
   mLogDebug("Read: ", nread);
+  mFinalAction(buf, uv_free_buffer(buf));
 
   if (nread < 0) {
     mLogDebug("Read error (connection closed?)");
     self->close();
-  } else if (nread > 0) {
-    StrView data = StrView(buf->base, nread);
-    if (not self->req_parser_.handle(data)) {
-      mLogDebug("Request parsing error");
-      self->close();
-    } else if (self->req_parser_.is_parsing_done()) {
-      mLogDebug("Parsing done");
-
-      HttpReq req = self->req_parser_.get_builder().build();
-      mLogDebug("HTTP ", StrView(llhttp_method_name(req.method)), " ", req.url);
-
-      self->router_.handle(req, self->response_);
-
-      // self->response_.send_basic(HTTP_STATUS_OK);
-
-      // self->response_.status(HTTP_STATUS_OK)
-      //     .content_type(ContentType::text_plain())
-      //     .body(Str("Hello!"))
-      //     .send();
-    }
+    return;
   }
 
-  uv_free_buffer(buf);
+  if (nread == 0) {
+    mLogWarn("Read 0???");
+    return;
+  }
+
+  StrView data = StrView(buf->base, nread);
+  if (not self->req_parser_.handle(data)) {
+    mLogDebug("Request parsing error");
+    self->close();
+    return;
+  }
+
+  if (not self->req_parser_.is_parsing_done()) {
+    return;
+  }
+
+  HttpReq req = self->req_parser_.get_builder().build();
+  mLogDebug("HTTP ", StrView(llhttp_method_name(req.method)), " ", req.url);
+  self->router_.handle(req, self->response_);
 }
 
 void HttpConnection::write_cb(uv_write_t* req, int status) {

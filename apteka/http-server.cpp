@@ -1,8 +1,8 @@
 #include "http-server.hpp"
 #include "http-connection.hpp"
 #include "common.hpp"
-#include "cc/log.hpp"
-#include "uv.h"
+#include <cc/log.hpp>
+#include <uv.h>
 
 static constexpr int g_backlog = 1024 * 16;
 
@@ -19,11 +19,6 @@ void HttpServer::listen(const SockAddr& addr) {
   mUvCheckCrit(uv_listen(get_stream(), g_backlog, connection_cb));
 }
 
-void HttpServer::report_closed(class HttpConnection* con) {
-  --connections_num_;
-  mLogDebug("Connection destroyed! Currently active: ", connections_num_);
-}
-
 uv_stream_t* HttpServer::get_stream() {
   return (uv_stream_t*)&socket_;
 }
@@ -36,7 +31,7 @@ void HttpServer::connection_cb(uv_stream_t* socket, int status) {
     return;
   }
 
-  HttpConnection* con = new HttpConnection(*self, self->router_);
+  HttpConnection* con = new HttpConnection(self->router_);
   ++self->connections_num_;
   mLogDebug("New connection! Currently active: ", self->connections_num_);
 

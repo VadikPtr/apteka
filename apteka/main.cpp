@@ -1,11 +1,11 @@
-#include "cc/log.hpp"
-#include "cc/prog-opts.hpp"
 #include "http-server.hpp"
 #include "ip.hpp"
-#include "llhttp.h"
-#include "mime.hpp"
-#include "uv.h"
+#include "content-type.hpp"
 #include "router.hpp"
+#include <cc/log.hpp>
+#include <cc/prog-opts.hpp>
+#include <llhttp.h>
+#include <uv.h>
 
 namespace {
   class ExampleHandler : public IReqHandler {
@@ -18,15 +18,11 @@ namespace {
   };
 
   struct Arguments {
-    Str  host;
-    int  port;
+    Str  host         = Str("127.0.0.1");
+    int  port         = 8080;
     bool serve_static = false;
 
     void parse(int argc, const char** argv) {
-      // defaults:
-      host = "127.0.0.1";
-      port = 8080;
-
       ProgOpts::add(ProgOpts::ArgumentStr{
           .long_name     = "host",
           .short_name    = 'H',

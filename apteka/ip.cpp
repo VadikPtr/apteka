@@ -1,9 +1,9 @@
 #include "ip.hpp"
-#include "cc/arr-view.hpp"
-#include "cc/common.hpp"
-#include "uv.h"
+#include <cc/arr-view.hpp>
+#include <cc/common.hpp>
+#include <uv.h>
 #ifdef _WIN32
-  #include "winsock2.h"
+  #include <winsock2.h>
 #endif
 
 SockAddr::SockAddr(const char* host, int port) {

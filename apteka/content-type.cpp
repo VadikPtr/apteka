@@ -1,4 +1,4 @@
-#include "mime.hpp"
+#include "content-type.hpp"
 
 StrView ContentType::ext_to_content_type(StrView ext) {
   if (ext.empty()) {

@@ -1,7 +1,7 @@
 #pragma once
-#include "cc/str-view.hpp"
-#include "cc/log.hpp"
-#include "uv.h"
+#include <cc/str-view.hpp>
+#include <cc/log.hpp>
+#include <uv.h>
 
 
 #define mUvCheckCrit(...)                                              \

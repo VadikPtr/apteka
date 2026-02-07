@@ -1,8 +1,8 @@
 #include "http-req.hpp"
-#include "cc/str.hpp"
 #include "http-connection.hpp"
-#include "cc/fmt.hpp"
-#include "mime.hpp"
+#include "content-type.hpp"
+#include <cc/str.hpp>
+#include <cc/fmt.hpp>
 
 void HttpReq::reset() {
   url     = Str();

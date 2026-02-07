@@ -1,14 +1,12 @@
 #pragma once
-#include "uv.h"
+#include <uv.h>
 #include "req-parser.hpp"
 #include "http-req.hpp"
 
-class HttpServer;
 class Router;
 
 class HttpConnection {
   uv_tcp_t    stream_;
-  HttpServer& server_;
   Router&     router_;
   uv_write_t  write_req_;
   uv_buf_t    response_buf_;
@@ -17,7 +15,7 @@ class HttpConnection {
   bool        stream_open_ = false;
 
  public:
-  HttpConnection(HttpServer& server, Router& router);
+  HttpConnection(Router& router);
   ~HttpConnection();
 
   bool         init(uv_stream_t* server);

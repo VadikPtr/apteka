@@ -1,5 +1,5 @@
 #pragma once
-#include "cc/str-view.hpp"
+#include <cc/str-view.hpp>
 
 struct ContentType {
   static StrView font_woff() { return "font/woff"; }
