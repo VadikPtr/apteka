@@ -69,13 +69,11 @@ namespace {
   }
 
   void ExampleHandler::handle(const HttpReq& req, HttpRes& res) {
-    SDict<StrView, Str> values;
-    values.reserve(1);
-    values.insert("title", Str("Amogus!"));
-
-    res.status(HTTP_STATUS_OK)
+    Str body = app_context.template_engine.render(  //
+        "index", "title", "Amogus!");
+    res.status(HTTP_STATUS_OK)  //
         .content_type(ContentType::text_html())
-        .body(app_context.template_engine.render("index", values))
+        .body(move(body))
         .send();
   }
 }  // namespace

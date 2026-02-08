@@ -26,14 +26,14 @@ TemplateInstance::TemplateInstance(Str content, Path source_path)
       source_path_(move(source_path)),
       max_expanded_size_(content_.size()) {}
 
-Str TemplateInstance::expand(const SDict<StrView, Str>& values) {
+Str TemplateInstance::expand(const TemplateKV& values) {
   StrBuilder builder;
   builder.ensure_capacity(max_expanded_size_);
   expand(builder, values);
   return builder.to_string();
 }
 
-void TemplateInstance::expand(StrBuilder& builder, const SDict<StrView, Str>& values) {
+void TemplateInstance::expand(StrBuilder& builder, const TemplateKV& values) {
 #ifdef _DEBUG
   content_ = source_path_.read_text();
 #endif
@@ -42,7 +42,6 @@ void TemplateInstance::expand(StrBuilder& builder, const SDict<StrView, Str>& va
   size_t expanded_size = 0;
 
   while (pos < content_.size()) {
-    mLogDebug(pos);
     StrView view = content_.sub(pos);
 
     size_t open_pos = view.find("{{");
@@ -62,8 +61,8 @@ void TemplateInstance::expand(StrBuilder& builder, const SDict<StrView, Str>& va
       break;
     }
 
-    StrView    key   = view.sub(open_pos + 2, close_pos - open_pos - 2).trim();
-    const Str* value = values.find_non_sorted(key);
+    StrView        key   = view.sub(open_pos + 2, close_pos - open_pos - 2).trim();
+    const StrView* value = values.find_non_sorted(key);
 
     if (not value) {
       mLogDebug("No substitution found for key ", key);
@@ -87,7 +86,7 @@ void TemplateEngine::insert(StrHash name, TemplateInstance instance) {
   instances_.insert(move(name), move(instance));
 }
 
-Str TemplateEngine::render(StrView name, const SDict<StrView, Str>& values) {
+Str TemplateEngine::render_dict(StrView name, const TemplateKV& values) {
   auto it = instances_.find(name);
   if (it == instances_.end()) {
     mLogWarn("Template instance ", name, " not found!");
