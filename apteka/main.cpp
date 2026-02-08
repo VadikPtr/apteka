@@ -1,22 +1,14 @@
-#include "http-server.hpp"
-#include "ip.hpp"
-#include "content-type.hpp"
-#include "router.hpp"
+#include "http-server/http-server.hpp"
+#include "http-server/ip.hpp"
+#include "http-server/content-type.hpp"
+#include "http-server/router.hpp"
+#include "template-engine/template-engine.hpp"
 #include <cc/log.hpp>
 #include <cc/prog-opts.hpp>
 #include <llhttp.h>
 #include <uv.h>
 
 namespace {
-  class ExampleHandler : public IReqHandler {
-    void handle(const HttpReq& req, HttpRes& res) override {
-      res.status(HTTP_STATUS_OK)
-          .content_type(ContentType::text_plain())
-          .body(Str("Hello, wrold!"))
-          .send();
-    }
-  };
-
   struct Arguments {
     Str  host         = Str("127.0.0.1");
     int  port         = 8080;
@@ -49,22 +41,51 @@ namespace {
       host.null_terminate();
     }
   };
+
+  struct AppContext {
+    TemplateEngine template_engine = TemplateEngine(Path::to_cwd() / "templates");
+    Arguments      arguments;
+
+    AppContext(int argc, const char** argv) { arguments.parse(argc, argv); }
+
+    void configure(Router& router);
+  };
+
+  class ExampleHandler : public IReqHandler {
+    AppContext& app_context;
+
+   public:
+    ExampleHandler(AppContext& app_context) : app_context(app_context) {}
+
+    void handle(const HttpReq& req, HttpRes& res) override;
+  };
+
+  void AppContext::configure(Router& router) {
+    router.add(HTTP_GET, "/", new ExampleHandler(*this));
+
+    if (arguments.serve_static) {
+      router.serve_static("/static", Path::to_cwd() / "static");
+    }
+  }
+
+  void ExampleHandler::handle(const HttpReq& req, HttpRes& res) {
+    SDict<StrView, Str> values;
+    values.reserve(1);
+    values.insert("title", Str("Amogus!"));
+
+    res.status(HTTP_STATUS_OK)
+        .content_type(ContentType::text_html())
+        .body(app_context.template_engine.render("index", values))
+        .send();
+  }
 }  // namespace
 
 int main(int argc, const char** argv) {
-  Arguments arguments;
-  arguments.parse(argc, argv);
-
-  Router router;
-  router.add(HTTP_GET, "/", new ExampleHandler());
-
-  if (arguments.serve_static) {
-    router.serve_static("/static", Path::to_cwd() / "static");
-  }
-
+  AppContext app_context(argc, argv);
+  Router     router;
+  app_context.configure(router);
   HttpServer server = HttpServer(router);
-  server.listen(SockAddr(arguments.host.data(), arguments.port));
-  mLogInfo("Listening on http://", arguments.host, ":", arguments.port);
-
+  server.listen(SockAddr(app_context.arguments.host.data(), app_context.arguments.port));
+  mLogInfo("Listening on http://", app_context.arguments.host, ":", app_context.arguments.port);
   return uv_run(uv_default_loop(), UV_RUN_DEFAULT);
 }
