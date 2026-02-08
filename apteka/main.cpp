@@ -80,7 +80,7 @@ namespace {
   }
 }  // namespace
 
-int main(int argc, const char** argv) {
+int main(int argc, const char** argv) try {
   AppContext app_context(argc, argv);
   Router     router;
   app_context.configure(router);
@@ -88,4 +88,6 @@ int main(int argc, const char** argv) {
   server.listen(SockAddr(app_context.arguments.host.data(), app_context.arguments.port));
   mLogInfo("Listening on http://", app_context.arguments.host, ":", app_context.arguments.port);
   return uv_run(uv_default_loop(), UV_RUN_DEFAULT);
+} catch (const Err& err) {
+  mLogCrit("Fatal error: ", err.message());
 }
