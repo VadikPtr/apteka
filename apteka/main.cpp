@@ -3,6 +3,7 @@
 #include "http-server/content-type.hpp"
 #include "http-server/router.hpp"
 #include "template-engine/template-engine.hpp"
+#include "db/db.hpp"
 #include <cc/log.hpp>
 #include <cc/prog-opts.hpp>
 #include <llhttp.h>
@@ -44,6 +45,7 @@ namespace {
 
   struct AppContext {
     TemplateEngine template_engine = TemplateEngine(Path::to_cwd() / "templates");
+    DB             db              = DB::read(Path::to_cwd() / "db");
     Arguments      arguments;
 
     AppContext(int argc, const char** argv) { arguments.parse(argc, argv); }
