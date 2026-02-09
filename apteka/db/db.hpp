@@ -78,6 +78,6 @@ class DB {
     return DB(move(categories), move(photos));
   }
 
-  Categories& get_categories();
-  Photos&     get_photos();
+  Categories& get_categories() { return categories_; }
+  Photos&     get_photos() { return photos_; }
 };

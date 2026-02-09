@@ -12,69 +12,116 @@ namespace {
     bool visit(const Path& path, FsType type) override {
       if (type == FsType::File) {
         Path             relative = path.relative_to(base_dir).with_ext("");
-        TemplateInstance instance = TemplateInstance(path.read_text(), path);
+        TemplateInstance instance = TemplateInstance(path);
         mLogDebug("Template instance: ", relative);
         engine.insert(relative.view(), instance);
       }
       return true;
     }
   };
+
+  List<TemplateToken> parse_template(StrView content) {
+    List<TemplateToken> tokens;
+    size_t              pos           = 0;
+    size_t              expanded_size = 0;
+
+    while (pos < content.size()) {
+      StrView view = content.sub(pos);
+
+      size_t open_pos = view.find("{{");
+      if (open_pos == StrView::npos) {
+        expanded_size += view.size();
+        tokens.push_back(TemplateToken{
+            .text = Str(view),
+            .type = TemplateTokenType::Text,
+        });
+        break;
+      }
+
+      StrView before_open = view.sub(0, open_pos);
+      expanded_size += before_open.size();
+      tokens.push_back(TemplateToken{
+          .text = Str(before_open),
+          .type = TemplateTokenType::Text,
+      });
+
+      size_t close_pos = view.find("}}");
+      if (close_pos == StrView::npos) {
+        mLogWarn("Closing term of template was not found!");
+        break;
+      }
+
+      StrView key = view.sub(open_pos + 2, close_pos - open_pos - 2).trim();
+      tokens.push_back(TemplateToken{
+          .key  = StrHash(key),
+          .type = TemplateTokenType::Substitution,
+      });
+
+      pos += close_pos + 2;
+    }
+
+    return tokens;
+  }
 }  // namespace
 
-TemplateInstance::TemplateInstance(Str content, Path source_path)
-    : content_(move(content)),
-      source_path_(move(source_path)),
-      max_expanded_size_(content_.size()) {}
+TemplateKV& TemplateKV::insert(StrHash hash, StrView value) {
+  assert(size < g_max_template_params);
+  keys[size]   = hash;
+  values[size] = value;
+  ++size;
+  return *this;
+}
 
-Str TemplateInstance::expand(const TemplateKV& values) {
+const StrView* TemplateKV::find(StrHash needle) const {
+  for (size_t i = 0; i < size; i++) {
+    if (keys[i] == needle) {
+      return &values[i];
+    }
+  }
+  return nullptr;
+}
+
+TemplateInstance::TemplateInstance(const Path& source_path) : source_path_(source_path) {
+  parse_template();
+}
+
+Str TemplateInstance::render(const TemplateKV& values) {
   StrBuilder builder;
-  builder.ensure_capacity(max_expanded_size_);
-  expand(builder, values);
+  render(builder, values);
   return builder.to_string();
 }
 
-void TemplateInstance::expand(StrBuilder& builder, const TemplateKV& values) {
+void TemplateInstance::render(StrBuilder& builder, const TemplateKV& values) {
 #ifdef _DEBUG
-  content_ = source_path_.read_text();
+  parse_template();
 #endif
 
-  size_t pos           = 0;
-  size_t expanded_size = 0;
+  builder.ensure_capacity(builder.view().size() + max_rendered_size_);
+  size_t render_begin = builder.view().size();
 
-  while (pos < content_.size()) {
-    StrView view = content_.sub(pos);
-
-    size_t open_pos = view.find("{{");
-    if (open_pos == StrView::npos) {
-      expanded_size += view.size();
-      builder.append(view);
-      break;
-    }
-
-    StrView before_open = view.sub(0, open_pos);
-    expanded_size += before_open.size();
-    builder.append(before_open);
-
-    size_t close_pos = view.find("}}");
-    if (close_pos == StrView::npos) {
-      mLogWarn("Closing term of template was not found!");
-      break;
-    }
-
-    StrView        key   = view.sub(open_pos + 2, close_pos - open_pos - 2).trim();
-    const StrView* value = values.find_non_sorted(key);
-
-    if (not value) {
-      mLogDebug("No substitution found for key ", key);
+  for (const TemplateToken& token : tokens_) {
+    if (token.type == TemplateTokenType::Text) {
+      builder.append(token.text);
+    } else if (token.type == TemplateTokenType::Substitution) {
+      const StrView* value = values.find(token.key);
+      if (value) {
+        builder.append(*value);
+      } else {
+        mLogWarn("No substitution found for key ", token.key.hash());
+      }
     } else {
-      expanded_size += value->size();
-      builder.append(*value);
+      mLogCrit("Token type is unknown");
     }
-
-    pos += close_pos + 2;
   }
 
-  max_expanded_size_ = mMax(max_expanded_size_, expanded_size);
+  size_t current_render_size = builder.view().size() - render_begin;
+  max_rendered_size_         = mMax(max_rendered_size_, current_render_size);
+}
+
+void TemplateInstance::parse_template() {
+  Str content        = source_path_.read_text();
+  tokens_            = ::parse_template(content).into_arr();
+  max_rendered_size_ = content.size();
 }
 
 TemplateEngine::TemplateEngine(const Path& base_dir) {
@@ -82,15 +129,12 @@ TemplateEngine::TemplateEngine(const Path& base_dir) {
   base_dir.visit_dir(visitor, FsDirMode::Recursive);
 }
 
-void TemplateEngine::insert(StrHash name, TemplateInstance instance) {
-  instances_.insert(move(name), move(instance));
+TemplateInstance& TemplateEngine::get(StrHash name) {
+  auto it = instances_.find(name);
+  assert(it != instances_.end());
+  return it.value();
 }
 
-Str TemplateEngine::render_dict(StrView name, const TemplateKV& values) {
-  auto it = instances_.find(name);
-  if (it == instances_.end()) {
-    mLogWarn("Template instance ", name, " not found!");
-    return Str(name);
-  }
-  return it.value().expand(values);
+void TemplateEngine::insert(StrHash name, TemplateInstance instance) {
+  instances_.insert(move(name), move(instance));
 }

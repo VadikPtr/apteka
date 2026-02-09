@@ -1,22 +1,55 @@
 #pragma once
-#include <cc/sdict.hpp>
 #include <cc/dict.hpp>
 #include <cc/str.hpp>
 #include <cc/fs.hpp>
 
-using TemplateKV = SDict<StrView, StrView>;
+inline constexpr size_t g_max_template_params = 16;
+
+struct TemplateKV {
+  StrHash keys[g_max_template_params];
+  StrView values[g_max_template_params];
+  size_t  size = 0;
+
+  TemplateKV&    insert(StrHash hash, StrView value);
+  const StrView* find(StrHash needle) const;
+};
+
+enum class TemplateTokenType {
+  Text,
+  Substitution,
+};
+
+struct TemplateToken {
+  Str               text;
+  StrHash           key;
+  TemplateTokenType type;
+};
 
 class TemplateInstance {
-  Str    content_;
-  Path   source_path_;
-  size_t max_expanded_size_;
+  Path               source_path_;
+  size_t             max_rendered_size_;
+  Arr<TemplateToken> tokens_;
 
  public:
-  explicit TemplateInstance(Str content, Path source_path);
+  explicit TemplateInstance(const Path& source_path);
 
-  Str    expand(const TemplateKV& values);
-  void   expand(StrBuilder& builder, const TemplateKV& values);
-  size_t get_capacity() const { return max_expanded_size_; }
+  Str  render(const TemplateKV& values);
+  void render(StrBuilder& builder, const TemplateKV& values);
+
+  template <typename TArr, typename TFunc>
+  Str render_array(const TArr& arr, TFunc&& func) {
+    StrBuilder builder;
+    builder.ensure_capacity(max_rendered_size_ * arr.size());
+    for (auto& item : arr) {
+      TemplateKV kv;
+      func(item, kv);
+      render(builder, kv);
+    }
+    return builder.to_string();
+  }
+
+ private:
+  void parse_template();
 };
 
 class TemplateEngine {
@@ -25,26 +58,6 @@ class TemplateEngine {
  public:
   TemplateEngine(const Path& base_dir);
 
-  void insert(StrHash name, TemplateInstance instance);
-  Str  render_dict(StrView name, const TemplateKV& values);
-
-  template <typename... Args>
-  Str render(StrView name, Args&&... args) {
-    TemplateKV dict;
-    dict.reserve(sizeof...(Args) / 2);
-    fill_dict(dict, std::forward<Args>(args)...);
-    return render_dict(name, dict);
-  }
-
- private:
-  template <typename... Args>
-  static void fill_dict(TemplateKV& dict, Args&&... args);
-
-  static void fill_dict(TemplateKV&) {}
-
-  template <typename Key, typename Value, typename... Rest>
-  static void fill_dict(TemplateKV& dict, Key&& key, Value&& value, Rest&&... rest) {
-    dict.insert(std::forward<Key>(key), std::forward<Value>(value));
-    fill_dict(dict, std::forward<Rest>(rest)...);
-  }
+  TemplateInstance& get(StrHash name);
+  void              insert(StrHash name, TemplateInstance instance);
 };
