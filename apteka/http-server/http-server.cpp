@@ -12,11 +12,13 @@ HttpServer::HttpServer(Router& router) : router_(router) {
   mUvCheckCrit(uv_tcp_init(uv_default_loop(), &socket_));
 }
 
-void HttpServer::listen(const SockAddr& addr) {
+int HttpServer::listen(const SockAddr& addr) {
   mUvCheckCrit(uv_tcp_bind(&socket_, &addr.addr, 0));
   // mUvCheckCrit(uv_tcp_keepalive(&socket_, 1, 45));
   mUvCheckCrit(uv_tcp_simultaneous_accepts(&socket_, 1));
   mUvCheckCrit(uv_listen(get_stream(), g_backlog, connection_cb));
+  mLogInfo("Listening on http://", addr.host, ":", addr.port);
+  return uv_run(uv_default_loop(), UV_RUN_DEFAULT);
 }
 
 uv_stream_t* HttpServer::get_stream() {

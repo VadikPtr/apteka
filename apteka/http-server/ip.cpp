@@ -6,7 +6,7 @@
   #include <winsock2.h>
 #endif
 
-SockAddr::SockAddr(const char* host, int port) {
+SockAddr::SockAddr(const char* host, int port) : host(host), port(port) {
   sockaddr_in addr_in;
   uv_ip4_addr(host, port, &addr_in);
   memcpy(&addr, &addr_in, sizeof(addr));

@@ -12,7 +12,7 @@ class HttpServer {
  public:
   HttpServer(Router& router);
 
-  void listen(const SockAddr& addr);
+  int listen(const SockAddr& addr);
 
  private:
   uv_stream_t* get_stream();
