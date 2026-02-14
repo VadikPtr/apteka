@@ -12,22 +12,32 @@ class ExampleHandler : public IReqHandler {
     TemplateInstance& photo_tmpl = app_context.template_engine.get("photo"_sh);
     TemplateInstance& index_tmpl = app_context.template_engine.get("index"_sh);
 
-    Arr<Photo>& photos = app_context.db.get_photos().get_all();
+    Str photos = photo_tmpl.render_array(                   //
+        app_context.db.get_photos().get_all().sub(10, 30),  //
+        [](const Photo& photo, TemplateKV& kv) {
+          kv.insert("id"_sh, photo.id)
+              .insert("source_name"_sh, photo.source_name)
+              .insert("date_created"_sh, photo.date_created)
+              .insert("category"_sh, photo.category->name);
+        });
 
-    Str body = index_tmpl.render(
-        TemplateKV()
+    Str body = index_tmpl.render(  //
+        TemplateKV()               //
             .insert("title"_sh, "Amogus!")
-            .insert("photos"_sh,
-                    photo_tmpl.render_array(photos, [](const Photo& photo, TemplateKV& kv) {
-                      kv.insert("id"_sh, photo.id)
-                          .insert("source_name"_sh, photo.source_name)
-                          .insert("date_created"_sh, photo.date_created)
-                          .insert("category"_sh, photo.category->name);
-                    })));
+            .insert("photos"_sh, move(photos)));
 
     res.status(HTTP_STATUS_OK)  //
         .content_type(ContentType::text_html())
         .body(move(body))
         .send();
   }
+};
+
+class RedirectHandler : public IReqHandler {
+  Str location_;
+
+ public:
+  RedirectHandler(Str location) : location_(move(location)) {}
+
+  void handle(const HttpReq&, HttpRes& res) override { res.send_permanent_redirect(location_); }
 };

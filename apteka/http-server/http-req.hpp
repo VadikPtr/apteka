@@ -31,7 +31,9 @@ class HttpRes {
   HttpRes& body(Str data);
   HttpRes& body(Arr<u8> data);
 
-  void send_basic(llhttp_status status);
   void send();
+  void send_basic(llhttp_status status);
+  void send_permanent_redirect(StrView location);
+
   void reset();
 };

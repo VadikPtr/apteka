@@ -16,7 +16,8 @@ DB DB::read(const Path& dir) {
   u32           photos_count  = photos_reader.read_u32();
   Arr<Photo>    photos_arr    = Arr<Photo>(photos_count);
   for (Photo& photo : photos_arr) {
-    photo.id           = photos_reader.read_str();
+    photo.id = photos_reader.read_str();
+    photo.id.to_lower();
     photo.source_name  = photos_reader.read_str();
     photo.date_created = photos_reader.read_str();
     Str category_id    = photos_reader.read_str();

@@ -1,4 +1,5 @@
 #include "router.hpp"
+#include "cc/fs.hpp"
 #include "content-type.hpp"
 #include <cc/log.hpp>
 #include <llhttp.h>
@@ -8,49 +9,43 @@ namespace {
     seed ^= value + 0x9e3779b97f4a7c15ULL + (seed << 13) + (seed >> 7);
   }
 
-  struct FileServeHandler : public IReqHandler {
-    StrView content_type;
-    Path    path;
+  class StaticHandler {
+    Path base_dir_;
+    Str  mount_path_;
 
-    FileServeHandler(StrView content_type, Path path)
-        : content_type(content_type), path(move(path)) {}
+   public:
+    StaticHandler(Path base_dir, Str mount_path)
+        : base_dir_(move(base_dir)), mount_path_(move(mount_path)) {}
 
-    void handle(const HttpReq&, HttpRes& res) override {
-      Arr<u8> bytes = read_file();
-      res.status(HTTP_STATUS_OK).content_type(content_type).body(bytes).send();
-    }
-
-    Arr<u8> read_file() {
-      size_t  sz   = path.file_size();
-      Arr<u8> res  = Arr<u8>(sz);
-      File    file = File(path, "rb");
+    bool try_handle(const HttpReq& req, HttpRes& res) {
+      if (req.url.find("..") != StrView::npos or  //
+          not req.url.starts_with(mount_path_)) {
+        return false;
+      }
+      StrView location = req.url.sub(mount_path_.size() + 1);
+      if (location.empty()) {
+        return false;
+      }
+      Path path = base_dir_ / location;
+      if (FsType type = path.type(); type != FsType::File) {
+        mLogDebug("Can't serve ", path, " (", type, "): not a file");
+      }
+      StrView content_type = ContentType::ext_to_content_type(path.ext());
+      size_t  sz           = path.file_size();
+      Arr<u8> bytes        = Arr<u8>(sz);
+      File    file         = File(path, "rb");
       if (not file.try_open(path, "rb")) {
-        mLogCrit("Serve static failed: cannot open file ", path);
+        mLogDebug("Serve static failed: cannot open file ", path);
+        return false;
       }
-      if (not file.try_read_bytes(res)) {
-        mLogCrit("Serve static failed: cannot read file ", path);
+      if (not file.try_read_bytes(bytes)) {
+        mLogDebug("Serve static failed: cannot read file ", path);
+        return false;
       }
-      return res;
-    }
-  };
-
-  struct StaticVisitor : public IFileVisitor {
-    const Path& base_dir;
-    Router&     router;
-    StrView     mount_path;
-
-    StaticVisitor(const Path& base_dir, Router& router, StrView mount_path)
-        : base_dir(base_dir), router(router), mount_path(mount_path) {}
-
-    bool visit(const Path& path, FsType type) override {
-      if (type == FsType::File) {
-        Path         relative     = path.relative_to(base_dir);
-        Str          serve_path   = mount_path + "/" + relative;
-        StrView      content_type = ContentType::ext_to_content_type(path.ext());
-        IReqHandler* handler      = new FileServeHandler(content_type, path);
-        mLogDebug("Serving ", serve_path, " (", content_type, ") with ", path);
-        router.add(HTTP_GET, serve_path, handler);
-      }
+      res.status(HTTP_STATUS_OK)  //
+          .content_type(content_type)
+          .body(move(bytes))
+          .send();
       return true;
     }
   };
@@ -91,9 +86,8 @@ void Router::add(llhttp_method method, StrView path, IReqHandler* handler) {
   handlers_.insert(move(key), move(handler));
 }
 
-void Router::serve_static(StrView mount_path, const Path& dir) {
-  StaticVisitor visitor = StaticVisitor(dir, *this, mount_path);
-  dir.visit_dir(visitor, FsDirMode::Recursive);
+void Router::serve_static(Str mount_path, Path dir) {
+  static_handler_ = new StaticHandler(move(dir), move(mount_path));
 }
 
 void Router::handle(const HttpReq& req, HttpRes& res) {
@@ -103,6 +97,9 @@ void Router::handle(const HttpReq& req, HttpRes& res) {
   };
   if (auto it = handlers_.find(key); it != handlers_.end()) {
     it.value()->handle(req, res);
+    return;
+  }
+  if (static_handler_ and static_handler_->try_handle(req, res)) {
     return;
   }
   if (not_found_handler_) {

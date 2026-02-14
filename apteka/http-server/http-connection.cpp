@@ -6,8 +6,7 @@
 #include <cc/log.hpp>
 #include <uv.h>
 
-HttpConnection::HttpConnection(Router& router)
-    : response_(*this), router_(router) {
+HttpConnection::HttpConnection(Router& router) : response_(*this), router_(router) {
   mLogDebug("Connection created!");
   memset(&stream_, 0, sizeof(stream_));
   memset(&write_req_, 0, sizeof(write_req_));
@@ -87,7 +86,11 @@ void HttpConnection::read_cb(uv_stream_t* stream, ssize_t nread, const uv_buf_t*
   mFinalAction(buf, uv_free_buffer(buf));
 
   if (nread < 0) {
-    mLogDebug("Read error (connection closed?)");
+    if (nread == UV_EOF) {
+      mLogDebug("Read EOF, closing connection")
+    } else {
+      mLogDebug("Read error: ", StrView(uv_strerror(nread)));
+    }
     self->close();
     return;
   }

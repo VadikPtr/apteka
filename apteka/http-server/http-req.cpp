@@ -1,6 +1,7 @@
 #include "http-req.hpp"
 #include "http-connection.hpp"
 #include "content-type.hpp"
+#include "llhttp.h"
 #include <cc/str.hpp>
 #include <cc/fmt.hpp>
 
@@ -63,6 +64,23 @@ void HttpRes::send_basic(llhttp_status status) {
     "Connection: Keep-Alive\r\n"
     "\r\n",
     send_body.view());
+  // clang-format on
+
+  http_connection_.send(buffer_.view());
+}
+
+void HttpRes::send_permanent_redirect(StrView location) {
+  StrBuilder send_body;
+  fmt(send_body, int(HTTP_STATUS_PERMANENT_REDIRECT), " ",
+      StrView(llhttp_status_name(HTTP_STATUS_PERMANENT_REDIRECT)));
+
+  // clang-format off
+  fmt(buffer_,
+    "HTTP/1.1 ", send_body.view(), "\r\n"
+    "Content-Length: 0\r\n"
+    "Location: ", location ,"\r\n"
+    "Connection: Keep-Alive\r\n"
+    "\r\n");
   // clang-format on
 
   http_connection_.send(buffer_.view());
