@@ -29,8 +29,9 @@ namespace {
       Path path = base_dir_ / location;
       if (FsType type = path.type(); type != FsType::File) {
         mLogDebug("Can't serve ", path, " (", type, "): not a file");
+        return false;
       }
-      StrView content_type = ContentType::ext_to_content_type(path.ext());
+      StrView content_type = ContentType::ext_to_content_type(path.ext_last());
       size_t  sz           = path.file_size();
       Arr<u8> bytes        = Arr<u8>(sz);
       File    file         = File(path, "rb");
