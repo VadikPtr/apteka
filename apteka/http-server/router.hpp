@@ -5,8 +5,8 @@
 #include <llhttp.h>
 
 struct IReqHandler {
-  virtual ~IReqHandler()                                = default;
-  virtual void handle(const HttpReq& req, HttpRes& res) = 0;
+  virtual ~IReqHandler()                          = default;
+  virtual void handle(HttpReq& req, HttpRes& res) = 0;
 };
 
 struct ReqHandlerKey {
@@ -32,5 +32,5 @@ class Router {
   void use_not_found_handler(IReqHandler* not_found_handler);
   void add(llhttp_method method, StrView path, IReqHandler* handler);
   void serve_static(Str mount_path, Path dir);  // NOTE: this is dev handler, not for production
-  void handle(const HttpReq& req, HttpRes& res);
+  void handle(HttpReq& req, HttpRes& res);
 };

@@ -44,6 +44,8 @@ class DB {
 
   const DbData& get() const { return data_; }
 
+  const Category* find_category_by_id(StrView id) const;
+
  private:
   void restore_nav_links();
 };

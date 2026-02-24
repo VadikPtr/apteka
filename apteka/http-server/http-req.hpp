@@ -7,7 +7,9 @@
 class HttpConnection;
 
 struct HttpReq {
-  Str                url;
+  Str                full_url;
+  StrView            url;
+  Dict<StrHash, Str> query;
   Dict<StrHash, Str> headers;
   llhttp_method      method;
 
@@ -37,3 +39,8 @@ class HttpRes {
 
   void reset();
 };
+
+extern struct HttpContext {
+  HttpReq* req;
+  HttpRes* res;
+} g_http_context;

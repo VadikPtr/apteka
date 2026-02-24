@@ -1,81 +1,47 @@
 #pragma once
 #include "app.hpp"
-#include "cc/str.hpp"
-#include "db.hpp"
+#include "app/db.hpp"
 #include "http-server/content-type.hpp"
+#include <llhttp.h>
+#include <cc/str.hpp>
 #include <cc/sarr.hpp>
-#include <cstring>
-#include <type_traits>
 
-class ExampleHandler : public IReqHandler {
+class MainHandler : public IReqHandler {
   AppContext& app_context;
 
  public:
-  ExampleHandler(AppContext& app_context) : app_context(app_context) {}
+  MainHandler(AppContext& app_context) : app_context(app_context) {}
 
-  void handle(const HttpReq& req, HttpRes& res) override {
-    TemplateInstance& index_tmpl = app_context.template_engine.get("index"_sh);
+  void handle(HttpReq& req, HttpRes& res) override {
+    res.status(HTTP_STATUS_OK)  //
+        .content_type(ContentType::text_html())
+        .body(app_context.page_render.build_main())
+        .send();
+  }
+};
 
-    Str photos     = build_photos();
-    Str navigation = build_navigation();
+class CategoryHandler : public IReqHandler {
+  AppContext& app_context;
 
-    Str body = index_tmpl.render(  //
-        TemplateKV()               //
-            .insert("title"_sh, "Amogus!")
-            .insert("navigation"_sh, navigation)
-            .insert("photos"_sh, photos));
+ public:
+  CategoryHandler(AppContext& app_context) : app_context(app_context) {}
+
+  void handle(HttpReq& req, HttpRes& res) override {
+    auto id = req.query.find("id"_sh);
+    if (id == req.query.end()) {
+      return res.send_basic(HTTP_STATUS_BAD_REQUEST);
+    }
+
+    const Category* category = app_context.db.find_category_by_id(id.value());
+    if (not category) {
+      return res.send_basic(HTTP_STATUS_NOT_FOUND);
+    }
 
     res.status(HTTP_STATUS_OK)  //
         .content_type(ContentType::text_html())
-        .body(move(body))
+        .body(app_context.page_render.build_category(category))
         .send();
   }
-
-  Str build_navigation() const {
-    return app_context.template_engine.get("nav"_sh).render_array(
-        app_context.db.get().nav_links, [](const NavLink& nav_link, TemplateKV& kv) mutable {
-          kv.insert("classes"_sh, "")  //
-              .insert("link"_sh, nav_link.link)
-              .insert("name"_sh, nav_link.name);
-        });
-  }
-
-  Str build_photos() const {
-    StaticFilter<Photo, 30> photos_filtered;
-    photos_filtered.filter(app_context.db.get().photos,
-                           [](const Photo& photo) { return photo.category->name != "hidden"; });
-
-    return app_context.template_engine.get("photo"_sh)
-        .render_array(photos_filtered.data, [](const Photo* photo, TemplateKV& kv) {
-          kv.insert("id"_sh, photo->id)
-              .insert("source_name"_sh, photo->source_name)
-              .insert("date_created"_sh, photo->date_created)
-              .insert("category"_sh, photo->category->name);
-        });
-  }
-
-  template <typename T, size_t capacity>
-  struct StaticFilter {
-    const T*       data_arr[capacity] = {nullptr};
-    SArr<const T*> data               = SArr<const T*>(data_arr);
-
-    template <typename TFunc>
-    void filter(const Arr<T>& source, TFunc&& func) {
-      for (size_t i = 0; i < source.size(); i++) {
-        const T& element = source[i];
-        if (func(element)) {
-          if constexpr (std::is_pointer_v<decltype(element)>) {
-            data.push(element);
-          } else {
-            data.push(&element);
-          }
-          if (data.size() == data.capacity()) {
-            break;
-          }
-        }
-      }
-    }
-  };
 };
 
 class RedirectHandler : public IReqHandler {
@@ -84,5 +50,5 @@ class RedirectHandler : public IReqHandler {
  public:
   RedirectHandler(Str location) : location_(move(location)) {}
 
-  void handle(const HttpReq&, HttpRes& res) override { res.send_permanent_redirect(location_); }
+  void handle(HttpReq&, HttpRes& res) override { res.send_permanent_redirect(location_); }
 };

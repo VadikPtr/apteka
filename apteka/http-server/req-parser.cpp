@@ -1,5 +1,6 @@
 #include "req-parser.hpp"
 #include <cc/log.hpp>
+#include "cc/str-view.hpp"
 #include <llhttp.h>
 
 namespace {
@@ -46,6 +47,39 @@ namespace {
   };
 
   llhttp_settings_t g_parser_settings = get_http_parser_settings();
+
+  Dict<StrHash, Str> parse_query(StrView query) {
+    Dict<StrHash, Str> result;
+
+    while (not query.empty()) {
+      size_t eq_pos  = query.find('=');
+      size_t and_pos = query.find('&');
+
+      if (and_pos == StrView::npos) {
+        and_pos = query.size();
+      }
+
+      StrView key;
+      StrView value;
+
+      if (eq_pos != StrView::npos && eq_pos < and_pos) {
+        key   = query.sub(0, eq_pos);
+        value = query.sub(eq_pos + 1, and_pos - eq_pos - 1);
+      } else {
+        key   = query.sub(and_pos);
+        value = {};
+      }
+
+      if (not key.empty()) {
+        mLogDebug("Query: '", key, "' = '", value, "'");
+        result.insert(StrHash(key), Str(value));
+      }
+
+      query = query.sub(and_pos + 1);
+    }
+
+    return result;
+  }
 }  // namespace
 
 ReqParser::ReqParser() {
@@ -62,9 +96,18 @@ void HttpReqBuilder::reset() {
 
 HttpReq HttpReqBuilder::build() {
   HttpReq req;
-  req.url     = url_.to_string();
-  req.headers = move(headers_);
-  req.method  = method_;
+  req.full_url = url_.to_string();
+  req.headers  = move(headers_);
+  req.method   = method_;
+
+  StrView          url_split_data[2];
+  ArrView<StrView> url_split = req.full_url.split('?', url_split_data);
+  if (url_split.size() == 2) {
+    req.url   = url_split[0];
+    req.query = parse_query(url_split[1]);
+  } else {
+    req.url = req.full_url;
+  }
   return req;
 }
 

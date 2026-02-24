@@ -5,6 +5,11 @@
 #include <cc/str.hpp>
 #include <cc/fmt.hpp>
 
+HttpContext g_http_context = {
+    .req = nullptr,
+    .res = nullptr,
+};
+
 void HttpReq::reset() {
   url     = Str();
   headers = Dict<StrHash, Str>();

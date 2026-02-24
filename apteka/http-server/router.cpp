@@ -17,7 +17,7 @@ namespace {
     StaticHandler(Path base_dir, Str mount_path)
         : base_dir_(move(base_dir)), mount_path_(move(mount_path)) {}
 
-    bool try_handle(const HttpReq& req, HttpRes& res) {
+    bool try_handle(HttpReq& req, HttpRes& res) {
       if (req.url.find("..") != StrView::npos or  //
           not req.url.starts_with(mount_path_)) {
         return false;
@@ -91,7 +91,7 @@ void Router::serve_static(Str mount_path, Path dir) {
   static_handler_ = new StaticHandler(move(dir), move(mount_path));
 }
 
-void Router::handle(const HttpReq& req, HttpRes& res) {
+void Router::handle(HttpReq& req, HttpRes& res) {
   ReqHandlerKey key = ReqHandlerKey{
       .method = req.method,
       .path   = req.url,

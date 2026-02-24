@@ -113,6 +113,8 @@ void HttpConnection::read_cb(uv_stream_t* stream, ssize_t nread, const uv_buf_t*
 
   HttpReq req = self->req_parser_.get_builder().build();
   mLogDebug("HTTP ", StrView(llhttp_method_name(req.method)), " ", req.url);
+  g_http_context.req = &req;
+  g_http_context.res = &self->response_;
   self->router_.handle(req, self->response_);
 }
 

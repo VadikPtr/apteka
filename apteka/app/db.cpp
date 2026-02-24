@@ -26,6 +26,15 @@ void DB::read(const Path& dir) {
   restore_nav_links();
 }
 
+const Category* DB::find_category_by_id(StrView id) const {
+  for (const Category& category : data_.categories) {
+    if (category.id == id) {
+      return &category;
+    }
+  }
+  return nullptr;
+}
+
 void DB::restore_nav_links() {
   size_t visible_cat_count = 0;
   for (const Category& cat : data_.categories) {
@@ -38,7 +47,7 @@ void DB::restore_nav_links() {
   for (const Category& cat : data_.categories) {
     if (cat.name != "hidden") {
       data_.nav_links[link_idx].name = cat.name;
-      data_.nav_links[link_idx].link = fmt("/category/", cat.id);
+      data_.nav_links[link_idx].link = fmt("/category?id=", cat.id);
       ++link_idx;
     }
   }

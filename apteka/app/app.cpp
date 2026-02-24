@@ -31,7 +31,8 @@ void Arguments::parse(int argc, const char** argv) {
 
 void AppContext::configure(Router& router) {
   router.add(HTTP_GET, "/favicon.ico", new RedirectHandler("/static/favicon.ico"_s));
-  router.add(HTTP_GET, "/", new ExampleHandler(*this));
+  router.add(HTTP_GET, "/", new MainHandler(*this));
+  router.add(HTTP_GET, "/category", new CategoryHandler(*this));
 
   if (arguments.serve_static) {
     router.serve_static("/static"_s, Path::to_cwd() / "static");

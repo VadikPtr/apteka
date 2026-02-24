@@ -1,6 +1,7 @@
 #pragma once
 #include "app/template-engine.hpp"
 #include "app/db.hpp"
+#include "app/page-render.hpp"
 #include "http-server/router.hpp"
 
 struct Arguments {
@@ -14,6 +15,7 @@ struct Arguments {
 struct AppContext {
   TemplateEngine template_engine = TemplateEngine(Path::to_cwd() / "templates");
   DB             db;
+  PageRender     page_render = PageRender(template_engine, db);
   Arguments      arguments;
 
   AppContext(int argc, const char** argv) {
