@@ -13,10 +13,13 @@ struct Arguments {
 
 struct AppContext {
   TemplateEngine template_engine = TemplateEngine(Path::to_cwd() / "templates");
-  DB             db              = DB::read(Path::to_cwd() / "db");
+  DB             db;
   Arguments      arguments;
 
-  AppContext(int argc, const char** argv) { arguments.parse(argc, argv); }
+  AppContext(int argc, const char** argv) {
+    arguments.parse(argc, argv);
+    db.read(Path::to_cwd() / "db");
+  }
 
   void configure(Router& router);
 };

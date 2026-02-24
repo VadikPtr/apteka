@@ -16,16 +16,18 @@ struct Photo {
   Category* category;
 };
 
-class Categories {
-  Arr<Category> data_;
+struct NavLink {
+  Str name;
+  Str link;
+};
 
- public:
-  Categories(Arr<Category> data) : data_(move(data)) {}
+struct DbData {
+  Arr<Category> categories;
+  Arr<Photo>    photos;
+  Arr<NavLink>  nav_links;
 
-  Arr<Category>& get_all() { return data_; }
-
-  Category* find_by_id(StrView id) {
-    for (Category& category : data_) {
+  Category* find_category_by_id(StrView id) {
+    for (Category& category : categories) {
       if (category.id == id) {
         return &category;
       }
@@ -34,24 +36,14 @@ class Categories {
   }
 };
 
-class Photos {
-  Arr<Photo> data_;
-
- public:
-  Photos(Arr<Photo> data) : data_(move(data)) {}
-
-  Arr<Photo>& get_all() { return data_; }
-};
-
 class DB {
-  Categories categories_;
-  Photos     photos_;
+  DbData data_;
 
  public:
-  DB(Categories categories, Photos photos) : categories_(move(categories)), photos_(move(photos)) {}
+  void read(const Path& dir);
 
-  static DB read(const Path& dir);
+  const DbData& get() const { return data_; }
 
-  Categories& get_categories() { return categories_; }
-  Photos&     get_photos() { return photos_; }
+ private:
+  void restore_nav_links();
 };
