@@ -82,7 +82,7 @@ void HttpConnection::close_cb(uv_handle_t* handle) {
 
 void HttpConnection::read_cb(uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
   HttpConnection* self = (HttpConnection*)stream->data;
-  mLogDebug("Read: ", nread);
+  mLogDebug("Read: ", int(nread));
   mFinalAction(buf, uv_free_buffer(buf));
 
   if (nread < 0) {
