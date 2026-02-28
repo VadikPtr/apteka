@@ -1,6 +1,5 @@
 #pragma once
 #include "app.hpp"
-#include "app/db.hpp"
 #include "http-server/content-type.hpp"
 #include <llhttp.h>
 #include <cc/str.hpp>

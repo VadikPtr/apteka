@@ -20,7 +20,7 @@ namespace {
     }
   };
 
-  List<TemplateToken> parse_template(StrView content) {
+  List<TemplateToken> parse_template_tokens(StrView content) {
     List<TemplateToken> tokens;
     size_t              pos           = 0;
     size_t              expanded_size = 0;
@@ -120,11 +120,11 @@ void TemplateInstance::render(StrBuilder& builder, const TemplateKV& values) {
 
 void TemplateInstance::parse_template() {
   Str content        = source_path_.read_text();
-  tokens_            = ::parse_template(content).into_arr();
+  tokens_            = parse_template_tokens(content).into_arr();
   max_rendered_size_ = content.size();
 }
 
-TemplateEngine::TemplateEngine(const Path& base_dir) {
+void TemplateEngine::parse(const Path& base_dir) {
   TemplateVisitor visitor = TemplateVisitor(base_dir, *this);
   base_dir.visit_dir(visitor, FsDirMode::Recursive);
 }

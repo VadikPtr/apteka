@@ -1,6 +1,7 @@
 #include "db.hpp"
+#include <cc/bstream.hpp>
 
-void DB::read(const Path& dir) {
+void Db::read(const Path& dir) {
   Arr<u8>       categories_data   = (dir / "categories.bin").read_bytes();
   BStreamReader categories_reader = BStreamReader(categories_data);
   u32           categories_count  = categories_reader.read_u32();
@@ -20,35 +21,17 @@ void DB::read(const Path& dir) {
     photo.source_name  = photos_reader.read_str();
     photo.date_created = photos_reader.read_str();
     Str category_id    = photos_reader.read_str();
-    photo.category     = data_.find_category_by_id(category_id);
+    photo.category     = find_category_by_id(category_id);
   }
 
-  restore_nav_links();
+  views_.restore();
 }
 
-const Category* DB::find_category_by_id(StrView id) const {
-  for (const Category& category : data_.categories) {
+Category* Db::find_category_by_id(StrView id) {
+  for (Category& category : data_.categories) {
     if (category.id == id) {
       return &category;
     }
   }
   return nullptr;
-}
-
-void DB::restore_nav_links() {
-  size_t visible_cat_count = 0;
-  for (const Category& cat : data_.categories) {
-    if (cat.name != "hidden") {
-      ++visible_cat_count;
-    }
-  }
-  data_.nav_links = Arr<NavLink>(visible_cat_count);
-  size_t link_idx = 0;
-  for (const Category& cat : data_.categories) {
-    if (cat.name != "hidden") {
-      data_.nav_links[link_idx].name = cat.name;
-      data_.nav_links[link_idx].link = fmt("/category?id=", cat.id);
-      ++link_idx;
-    }
-  }
 }

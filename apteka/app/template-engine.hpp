@@ -56,8 +56,7 @@ class TemplateEngine {
   Dict<StrHash, TemplateInstance> instances_;
 
  public:
-  TemplateEngine(const Path& base_dir);
-
+  void              parse(const Path& base_dir);
   TemplateInstance& get(StrHash name);
   void              insert(StrHash name, TemplateInstance instance);
 };
