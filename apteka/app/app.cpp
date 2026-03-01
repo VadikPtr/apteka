@@ -1,5 +1,6 @@
 #include "app.hpp"
 #include "handlers.hpp"
+#include "auth.hpp"
 #include <cc/prog-opts.hpp>
 
 void Arguments::parse(int argc, const char** argv) {
@@ -27,6 +28,13 @@ void Arguments::parse(int argc, const char** argv) {
   ProgOpts::parse(argc, argv);
 
   host.null_terminate();
+}
+
+AppContext::AppContext(int argc, const char** argv) {
+  arguments.parse(argc, argv);
+  template_engine.parse(Path::to_cwd() / "templates");
+  db.read(Path::to_cwd() / "db");
+  auth::init();
 }
 
 void AppContext::configure(Router& router) {

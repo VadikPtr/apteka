@@ -1,6 +1,6 @@
-#include "views.hpp"
-#include <cc/fmt.hpp>
+#include "db/views.hpp"
 #include "db/model.hpp"
+#include <cc/fmt.hpp>
 
 namespace {
   template <typename TOut, typename TIn, typename TFunc>

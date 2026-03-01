@@ -18,11 +18,7 @@ struct AppContext {
   Db             db;
   PageRender     page_render = PageRender(template_engine, db);
 
-  AppContext(int argc, const char** argv) {
-    arguments.parse(argc, argv);
-    template_engine.parse(Path::to_cwd() / "templates");
-    db.read(Path::to_cwd() / "db");
-  }
+  AppContext(int argc, const char** argv);
 
   void configure(Router& router);
 };
