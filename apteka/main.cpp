@@ -5,8 +5,8 @@
 #include <cc/log.hpp>
 
 int main(int argc, const char** argv) try {
-  AppContext app_context(argc, argv);
-  Router     router;
+  AppContext app_context = AppContext(argc, argv);
+  Router     router      = Router();
   app_context.configure(router);
   HttpServer server = HttpServer(router);
   SockAddr   addr   = SockAddr(app_context.arguments.host.data(), app_context.arguments.port);

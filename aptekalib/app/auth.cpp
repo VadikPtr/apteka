@@ -10,19 +10,24 @@ Auth::Auth() {
   }
 }
 
-Str Auth::hash_password(Str password) const {
-  unsigned char hash[crypto_pwhash_STRBYTES];
+void Auth::init(StrView admin_password) {
+  admin_password_ = admin_password;
+  admin_password_.null_terminate();
+}
 
-  int r = crypto_pwhash_str(reinterpret_cast<char*>(hash), password.data(), password.size(),
+bool Auth::check_hash_matches(StrView password) const {
+  int r = crypto_pwhash_str_verify(admin_password_.data(), password.data(), password.size());
+  return r == 0;
+}
+
+Str Auth::hash_password(Str password) const {
+  char hash[crypto_pwhash_STRBYTES];
+
+  int r = crypto_pwhash_str(hash, password.data(), password.size(),
                             crypto_pwhash_OPSLIMIT_INTERACTIVE, crypto_pwhash_MEMLIMIT_INTERACTIVE);
   if (r != 0) {
     mLogCrit("Failed to hash password");
   }
 
-  return Str(reinterpret_cast<char*>(hash));
-}
-
-bool Auth::check_hash_matches(StrView hashed_password, StrView password) const {
-  int r = crypto_pwhash_str_verify(hashed_password.data(), password.data(), password.size());
-  return r == 0;
+  return Str(hash);
 }
