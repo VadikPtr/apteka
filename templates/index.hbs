@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-100">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light dark" />
     <title>{{title}}</title>
-    <meta property="og:title" content="{{title}}" />
+    <meta property="og:title" content="Фотографии Вадима - {{title}}" />
     <meta property="og:type" content="website" />
     <style>
       html {
@@ -24,10 +24,10 @@
   </head>
   <body class="h-100 d-flex flex-column" data-bs-theme="dark">
 
-    <header class="flex-shrink-0">
+    <header>
       <nav class="navbar navbar-expand-lg bg-body-tertiary mb-2">
         <div class="container-fluid">
-          <a class="navbar-brand" href="/">Gallery</a>
+          <a class="navbar-brand" href="/">Фотографии Вадима</a>
           <button
             class="navbar-toggler"
             type="button"
@@ -48,17 +48,17 @@
       </nav>
     </header>
 
-    <main class="flex-shrink-0 mb-2 ps-2 pe-2">
-      <h1>{{title}}</h1>
+    <main class="mb-2 ps-2 pe-2">
       <div class="d-flex flex-wrap">
         {{photos}}
       </div>
     </main>
 
-    <footer class="footer mt-auto py-3 bg-body-tertiary">
-      <div class="container">
-        <span class="text-body-secondary">Place sticky footer content here.</span>
-      </div>
+    <footer class="footer mt-auto py-3 ps-3 bg-body-tertiary">
+      <span class="text-body-secondary">
+        © Вадим Чупраков 2012-{{year}}. Все права защищены.
+        При использовании фотографий в любых целях указание авторства обязательно.
+      </span>
     </footer>
 
     <script src="/static/bootstrap/js/bootstrap.bundle.min.js"></script>

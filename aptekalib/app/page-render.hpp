@@ -3,6 +3,7 @@
 #include "db/db.hpp"
 #include "http-server/http-req.hpp"
 #include <cc/sarr.hpp>
+#include <ctime>
 
 
 struct PageRender {
@@ -15,7 +16,8 @@ struct PageRender {
     Str               navigation = build_navigation();
     return index_tmpl.render(  //
         TemplateKV()
-            .insert("title"_sh, "")
+            .insert("title"_sh, "Фотографии Вадима")
+            .insert("year"_sh, year())
             .insert("navigation"_sh, navigation)
             .insert("photos"_sh, photos));
   }
@@ -27,6 +29,7 @@ struct PageRender {
     return index_tmpl.render(  //
         TemplateKV()
             .insert("title"_sh, category->name)
+            .insert("year"_sh, year())
             .insert("navigation"_sh, navigation)
             .insert("photos"_sh, photos));
   }
@@ -49,5 +52,15 @@ struct PageRender {
               .insert("date_created"_sh, photo->date_created)
               .insert("category"_sh, photo->category->name);
         });
+  }
+
+ private:
+  static StrView year() {
+    std::time_t       t          = std::time(nullptr);
+    std::tm*          local_time = std::localtime(&t);
+    static StrBuilder builder    = StrBuilder();
+    builder.reset();
+    fmt(builder, local_time->tm_year + 1900);
+    return builder.view();
   }
 };

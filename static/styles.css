@@ -16,3 +16,7 @@ body {
   border-radius: 8px;
   background-size: cover;
 }
+
+.nav-link {
+  padding-top: 0.65rem;
+}
