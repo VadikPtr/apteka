@@ -24,3 +24,6 @@ compile_commands.json
 *.jpg
 /db
 /static/photos
+
+*.deb
+*.rpm

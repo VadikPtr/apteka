@@ -15,6 +15,8 @@ cleanInstall() {
 
 upgrade() {
   printf "\033[32m Post Install of an upgrade\033[0m\n"
+  systemctl daemon-reload ||:
+  systemctl restart apteka ||:
 }
 
 action="$1"

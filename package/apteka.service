@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/opt/apteka/apteka
+ExecStart=/opt/apteka/apteka --host 127.0.0.1 --port 9005
 WorkingDirectory=/opt/apteka
 User=apteka
 Group=apteka
@@ -14,7 +14,7 @@ RestartSec=5s
 TimeoutStartSec=30
 TimeoutStopSec=10
 
-ProtectSystem=full
+ProtectSystem=strict
 ProtectHome=yes
 PrivateTmp=yes
 NoNewPrivileges=yes
@@ -25,6 +25,7 @@ RestrictRealtime=no
 ProtectKernelTunables=yes
 ProtectKernelModules=yes
 ProtectControlGroups=yes
+ReadWritePaths=/opt/apteka
 
 StandardOutput=journal
 StandardError=journal

@@ -15,11 +15,7 @@ depends:
   - imagemagick
 
 contents:
-  - src: ./package/apteka.service
-    dst: /etc/systemd/system
-  - src: ./bin/Release/apteka
-    dst: /opt/apteka
-  - src: ./templates
-    dst: /opt/apteka
-  - src: ./static
-    dst: /opt/apteka
+  - {src: ./package/apteka.service, dst: /etc/systemd/system/}
+  - {src: ./bin/Release/apteka, dst: /opt/apteka/}
+  - {src: ./templates, dst: /opt/apteka/templates, type: tree}
+  - {src: ./static, dst: /opt/apteka/static, type: tree, file_info: {mode: 0640, owner: www-data, group: www-data}}
