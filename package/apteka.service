@@ -1,0 +1,33 @@
+[Unit]
+Description=Apteka gallery
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/opt/apteka/apteka
+WorkingDirectory=/opt/apteka
+User=apteka
+Group=apteka
+
+Restart=always
+RestartSec=5s
+TimeoutStartSec=30
+TimeoutStopSec=10
+
+ProtectSystem=full
+ProtectHome=yes
+PrivateTmp=yes
+NoNewPrivileges=yes
+PrivateDevices=yes
+RestrictNamespaces=yes
+RestrictAddressFamilies=AF_INET AF_INET6
+RestrictRealtime=no
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

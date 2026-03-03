@@ -1,0 +1,25 @@
+name: apteka
+arch: amd64
+version: 1.0.0
+section: utils
+priority: optional
+maintainer: Vadim Chuprakov <va00iosd@gmail.com>
+homepage: https://github.com/VadikPtr/apteka
+description: Gallery web site
+vendor: Vadim Chuprakov
+license: WTFPL
+scripts:
+  postinstall: ./package/postinstall.sh
+  postremove: ./package/postremove.sh
+depends:
+  - imagemagick
+
+contents:
+  - src: ./package/apteka.service
+    dst: /etc/systemd/system
+  - src: ./bin/Release/apteka
+    dst: /opt/apteka
+  - src: ./templates
+    dst: /opt/apteka
+  - src: ./static
+    dst: /opt/apteka
